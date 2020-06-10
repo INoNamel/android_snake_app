@@ -38,6 +38,8 @@ public class GameActivity extends Activity implements SensorEventListener {
     static String user;
     private static boolean sensorsDetected;
 
+    private static boolean swiping = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,19 +68,20 @@ public class GameActivity extends Activity implements SensorEventListener {
 
     public boolean testSensors() {
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        return (sensorManager != null && sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null && sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null);
+        return (sensorManager != null && sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null);
+        //&& sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
     }
 
     public void startMotionSensors() {
-        accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accel, 20000);
+        //accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        //sensorManager.registerListener(this, accel, 20000);
         gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         sensorManager.registerListener(this, gyro, 20000);
     }
 
     public void stopMotionSensor() {
         if(sensorsDetected) {
-            sensorManager.unregisterListener(this, accel);
+            //sensorManager.unregisterListener(this, accel);
             sensorManager.unregisterListener(this, gyro);
         }
     }
@@ -86,29 +89,34 @@ public class GameActivity extends Activity implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(sensorsDetected) {
-            Sensor sensor = event.sensor;
-            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                z = event.values[2];
-            } else if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-                y = event.values[1];
-            }
+            if(!swiping) {
+                Sensor sensor = event.sensor;
+                /*if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                    //z = event.values[2];
+                } else */
+                if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+                    y = event.values[1];
+                    z = event.values[0];
+                }
 
-            if (z > 2.01) {
-                if(snakeView.getSnake().getHeadDirection() != 2)
-                    snakeView.getSnake().setHeadDirection(0);
-                //up
-            } else if (z < -2.01) {
-                if(snakeView.getSnake().getHeadDirection() != 0)
-                    snakeView.getSnake().setHeadDirection(2);
-                //down
-            } else if(y > 2.01) {
-                if(snakeView.getSnake().getHeadDirection() != 3)
-                    snakeView.getSnake().setHeadDirection(1);
-                //right
-            } else if (y < -2.01) {
-                if(snakeView.getSnake().getHeadDirection() != 1)
-                    snakeView.getSnake().setHeadDirection(3);
-                //left
+                if (z > 2.01) {
+                    if(snakeView.getSnake().getHeadDirection() != 0)
+                        snakeView.getSnake().setHeadDirection(2);
+                    //up
+                } else if (z < -2.01) {
+                    if(snakeView.getSnake().getHeadDirection() != 2)
+                        snakeView.getSnake().setHeadDirection(0);
+                    //down
+                } else if(y > 2.01 ) {
+                    if(snakeView.getSnake().getHeadDirection() != 3)
+                        snakeView.getSnake().setHeadDirection(1);
+                    //right
+                } else if (y < -2.01) {
+                    if(snakeView.getSnake().getHeadDirection() != 1)
+                        snakeView.getSnake().setHeadDirection(3);
+                    //left
+                }
+
             }
         }
     }
@@ -312,33 +320,35 @@ public class GameActivity extends Activity implements SensorEventListener {
         public boolean onTouchEvent(MotionEvent event) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
+                    swiping = true;
                     x1 = event.getX();
                     y1 = event.getY();
                     break;
                 case MotionEvent.ACTION_UP:
+                    swiping = false;
                     x2 = event.getX();
                     y2 = event.getY();
                     float deltaX = x2 - x1;
                     float deltaY = y2 - y1;
-
-                    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE)
-                    {
-                        if(deltaX > 0 && snakeView.getSnake().getHeadDirection() != 3)
-                            snakeView.getSnake().setHeadDirection(1); // right
-                        else if(deltaX < 0 && snakeView.getSnake().getHeadDirection() != 1)
-                            snakeView.getSnake().setHeadDirection(3); // left
-                    } else if (Math.abs(deltaY) > MIN_SWIPE_DISTANCE)
-                    {
-                        if(deltaY > 0 && snakeView.getSnake().getHeadDirection() != 0)
-                            snakeView.getSnake().setHeadDirection(2); // up
-                        else if(deltaY < 0 && snakeView.getSnake().getHeadDirection() != 2)
-                            snakeView.getSnake().setHeadDirection(0); // down
-                    } else if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE) {
-                        performClick();
-                        if(isPlaying)
-                            pause();
-                            createDialog();
-                    }
+                        if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE)
+                        {
+                            if(deltaX > 0 && snakeView.getSnake().getHeadDirection() != 3)
+                                snakeView.getSnake().setHeadDirection(1); // right
+                            else if(deltaX < 0 && snakeView.getSnake().getHeadDirection() != 1)
+                                snakeView.getSnake().setHeadDirection(3); // left
+                        } else if (Math.abs(deltaY) > MIN_SWIPE_DISTANCE)
+                        {
+                            if(deltaY > 0 && snakeView.getSnake().getHeadDirection() != 0)
+                                snakeView.getSnake().setHeadDirection(2); // up
+                            else if(deltaY < 0 && snakeView.getSnake().getHeadDirection() != 2)
+                                snakeView.getSnake().setHeadDirection(0); // down
+                        } else if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE) {
+                            performClick();
+                            if(isPlaying) {
+                                pause();
+                                createDialog();
+                            }
+                        }
                     break;
             }
             return true;
